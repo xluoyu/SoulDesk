@@ -1,6 +1,7 @@
 mod ai;
 mod commands;
 mod db;
+mod skill;
 
 use db::Database;
 use std::sync::Arc;
@@ -21,7 +22,21 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(database)
-        .invoke_handler(tauri::generate_handler![commands::chat::send_message])
+        .invoke_handler(tauri::generate_handler![
+            commands::chat::send_message,
+            commands::window::show_chat_window,
+            commands::window::show_floating_widget,
+            commands::window::create_floating_window,
+            commands::window::close_floating_window,
+            commands::window::open_settings_window,
+            commands::window::close_settings_window,
+            commands::skill::upload_skill,
+            commands::skill::list_skills,
+            commands::skill::toggle_skill,
+            commands::skill::delete_skill,
+            commands::skill::get_active_skills,
+            commands::skill::switch_role,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

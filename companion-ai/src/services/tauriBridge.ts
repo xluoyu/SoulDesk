@@ -50,3 +50,7 @@ export async function deleteSkill(skillId: string): Promise<void> {
 export async function getActiveSkills(): Promise<Skill[]> {
   return await invoke<Skill[]>('get_active_skills');
 }
+
+export async function switchRole(skillId: string): Promise<{ session_id: string; skill_id: string }> {
+  return await invoke('switch_role', { newSkillId: skillId });
+}

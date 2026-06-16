@@ -23,3 +23,15 @@ CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS skills (
+    id TEXT PRIMARY KEY,
+    dir_path TEXT UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT,
+    meta_json TEXT,
+    raw_content TEXT,
+    system_prompt TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT NOT NULL
+);

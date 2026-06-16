@@ -1,15 +1,17 @@
 import { create } from 'zustand';
 import type { ChatMessage, AIProviderConfig } from '../types';
-import { sendMessage } from '../services/tauriBridge';
+import { sendMessage, switchRole } from '../services/tauriBridge';
 
 interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   sessionId: string;
+  skillId: string;
   providerConfig: AIProviderConfig;
   addMessage: (msg: ChatMessage) => void;
   send: (content: string) => Promise<void>;
   setProviderConfig: (config: AIProviderConfig) => void;
+  switchToRole: (skillId: string) => Promise<void>;
   clearMessages: () => void;
 }
 
@@ -26,6 +28,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isLoading: false,
   sessionId: crypto.randomUUID(),
+  skillId: 'default',
   providerConfig: DEFAULT_CONFIG,
 
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
@@ -70,5 +73,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setProviderConfig: (config) => set({ providerConfig: config }),
+
+  switchToRole: async (skillId: string) => {
+    try {
+      const result = await switchRole(skillId);
+      set({
+        sessionId: result.session_id,
+        skillId: result.skill_id,
+        messages: [],
+      });
+    } catch (error) {
+      console.error('Failed to switch role:', error);
+    }
+  },
+
   clearMessages: () => set({ messages: [], sessionId: crypto.randomUUID() }),
 }));
