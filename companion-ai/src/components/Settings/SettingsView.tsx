@@ -3,10 +3,22 @@ import type { Skill } from '../../types';
 import { listSkills, uploadSkill, toggleSkill, deleteSkill } from '../../services/tauriBridge';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
-type TabKey = 'model' | 'skill' | 'general';
+type MenuKey = 'model' | 'skill' | 'general';
+
+interface MenuItem {
+  key: MenuKey;
+  label: string;
+  icon: string;
+}
+
+const menuItems: MenuItem[] = [
+  { key: 'model', label: '模型配置', icon: '⚙' },
+  { key: 'skill', label: '角色管理', icon: '👤' },
+  { key: 'general', label: '通用设置', icon: '🔧' },
+];
 
 const SettingsView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('model');
+  const [activeMenu, setActiveMenu] = useState<MenuKey>('model');
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -74,15 +86,11 @@ const SettingsView: React.FC = () => {
     }
   };
 
-  const tabs: { key: TabKey; label: string }[] = [
-    { key: 'model', label: '模型' },
-    { key: 'skill', label: '角色' },
-    { key: 'general', label: '通用' },
-  ];
-
   const renderModelSettings = () => (
-    <div style={{ padding: '0 16px' }}>
-      <div style={{ marginBottom: 16 }}>
+    <div>
+      <h3 style={sectionTitle}>模型配置</h3>
+
+      <div style={fieldGroup}>
         <label style={labelStyle}>提供商</label>
         <select
           value={providerType}
@@ -94,7 +102,7 @@ const SettingsView: React.FC = () => {
         </select>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={fieldGroup}>
         <label style={labelStyle}>API Key</label>
         <input
           type="password"
@@ -105,7 +113,7 @@ const SettingsView: React.FC = () => {
         />
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={fieldGroup}>
         <label style={labelStyle}>Base URL</label>
         <input
           value={baseUrl}
@@ -114,7 +122,7 @@ const SettingsView: React.FC = () => {
         />
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={fieldGroup}>
         <label style={labelStyle}>模型</label>
         <input
           value={model}
@@ -123,7 +131,7 @@ const SettingsView: React.FC = () => {
         />
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ flex: 1 }}>
           <label style={labelStyle}>Temperature ({temperature})</label>
           <input
@@ -133,7 +141,7 @@ const SettingsView: React.FC = () => {
             step="0.1"
             value={temperature}
             onChange={(e) => setTemperature(parseFloat(e.target.value))}
-            style={{ width: '100%' }}
+            style={{ width: '100%', marginTop: 8 }}
           />
         </div>
         <div style={{ flex: 1 }}>
@@ -150,8 +158,9 @@ const SettingsView: React.FC = () => {
   );
 
   const renderSkillSettings = () => (
-    <div style={{ padding: '0 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={sectionTitle}>角色管理</h3>
         <label style={buttonStyle}>
           {uploading ? '上传中...' : '导入角色'}
           <input
@@ -219,12 +228,7 @@ const SettingsView: React.FC = () => {
               </div>
               <div
                 onClick={() => handleDelete(skill.id)}
-                style={{
-                  color: 'var(--text-muted)',
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                }}
+                style={{ color: 'var(--text-muted)', fontSize: 14, cursor: 'pointer', padding: '4px 8px' }}
               >
                 ×
               </div>
@@ -236,22 +240,38 @@ const SettingsView: React.FC = () => {
   );
 
   const renderGeneralSettings = () => (
-    <div style={{ padding: '0 16px' }}>
-      <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>桌面浮窗</label>
-        <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 4 }}>
-          关闭后需要通过 Dock 打开会话界面
+    <div>
+      <h3 style={sectionTitle}>通用设置</h3>
+
+      <div style={fieldGroup}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={labelStyle}>桌面浮窗</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 2 }}>
+              关闭后需要通过 Dock 打开会话界面
+            </div>
+          </div>
+          <div style={toggleTrack}>
+            <div style={toggleThumb} />
+          </div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>主动推送</label>
-        <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 4 }}>
-          AI 会主动向你发送消息
+      <div style={fieldGroup}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={labelStyle}>主动推送</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 2 }}>
+              AI 会主动向你发送消息
+            </div>
+          </div>
+          <div style={toggleTrack}>
+            <div style={toggleThumb} />
+          </div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={fieldGroup}>
         <label style={labelStyle}>免打扰时段</label>
         <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 4 }}>
           设置后该时段不会收到主动推送
@@ -260,56 +280,89 @@ const SettingsView: React.FC = () => {
     </div>
   );
 
+  const renderContent = () => {
+    switch (activeMenu) {
+      case 'model': return renderModelSettings();
+      case 'skill': return renderSkillSettings();
+      case 'general': return renderGeneralSettings();
+    }
+  };
+
   return (
-    <div style={{ height: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
+    <div style={{ height: '100vh', background: 'var(--bg-primary)', display: 'flex' }}>
+      {/* Left sidebar */}
       <div
         style={{
-          padding: '14px 16px',
-          borderBottom: '1px solid var(--border)',
+          width: 180,
+          background: 'var(--bg-secondary)',
+          borderRight: '1px solid var(--border)',
           display: 'flex',
-          alignItems: 'center',
-          gap: 10,
+          flexDirection: 'column',
         }}
       >
-        <div onClick={handleClose} style={{ color: 'var(--text-secondary)', fontSize: 18, cursor: 'pointer' }}>
-          ‹
-        </div>
-        <div style={{ flex: 1, color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>
-          设置
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
-        {tabs.map((tab) => (
+        {/* Sidebar header */}
+        <div
+          style={{
+            padding: '16px',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
           <div
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              flex: 1,
-              padding: '12px 0',
-              textAlign: 'center',
-              color: activeTab === tab.key ? 'var(--accent)' : 'var(--text-secondary)',
-              fontSize: 13,
-              fontWeight: activeTab === tab.key ? 600 : 400,
-              borderBottom: activeTab === tab.key ? '2px solid var(--accent)' : '2px solid transparent',
-              cursor: 'pointer',
-            }}
+            onClick={handleClose}
+            style={{ color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer' }}
           >
-            {tab.label}
+            ‹
           </div>
-        ))}
+          <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>设置</span>
+        </div>
+
+        {/* Menu items */}
+        <div style={{ flex: 1, padding: '8px 0' }}>
+          {menuItems.map((item) => (
+            <div
+              key={item.key}
+              onClick={() => setActiveMenu(item.key)}
+              style={{
+                padding: '10px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                cursor: 'pointer',
+                background: activeMenu === item.key ? 'rgba(233, 69, 96, 0.1)' : 'transparent',
+                borderLeft: activeMenu === item.key ? '3px solid var(--accent)' : '3px solid transparent',
+                color: activeMenu === item.key ? 'var(--accent)' : 'var(--text-secondary)',
+                fontSize: 13,
+                transition: 'all 0.15s',
+              }}
+            >
+              <span style={{ fontSize: 14 }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingTop: 16 }}>
-        {activeTab === 'model' && renderModelSettings()}
-        {activeTab === 'skill' && renderSkillSettings()}
-        {activeTab === 'general' && renderGeneralSettings()}
+      {/* Right content */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+        {renderContent()}
       </div>
     </div>
   );
+};
+
+const sectionTitle: React.CSSProperties = {
+  color: 'var(--text-primary)',
+  fontSize: 16,
+  fontWeight: 600,
+  marginBottom: 20,
+  marginTop: 0,
+};
+
+const fieldGroup: React.CSSProperties = {
+  marginBottom: 18,
 };
 
 const labelStyle: React.CSSProperties = {
@@ -338,6 +391,26 @@ const buttonStyle: React.CSSProperties = {
   color: 'white',
   fontSize: 12,
   cursor: 'pointer',
+};
+
+const toggleTrack: React.CSSProperties = {
+  width: 40,
+  height: 22,
+  borderRadius: 11,
+  background: 'var(--accent)',
+  position: 'relative',
+  cursor: 'pointer',
+  flexShrink: 0,
+};
+
+const toggleThumb: React.CSSProperties = {
+  width: 18,
+  height: 18,
+  borderRadius: '50%',
+  background: 'white',
+  position: 'absolute',
+  top: 2,
+  left: 20,
 };
 
 export default SettingsView;
