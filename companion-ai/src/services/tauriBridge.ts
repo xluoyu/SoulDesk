@@ -22,6 +22,14 @@ export async function closeFloatingWindow(): Promise<void> {
   await invoke('close_floating_window');
 }
 
+export async function openSettingsWindow(): Promise<void> {
+  await invoke('open_settings_window');
+}
+
+export async function closeSettingsWindow(): Promise<void> {
+  await invoke('close_settings_window');
+}
+
 // Skill management
 export async function uploadSkill(request: UploadSkillRequest): Promise<Skill> {
   return await invoke<Skill>('upload_skill', { request });
