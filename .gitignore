@@ -1,0 +1,16 @@
+# Claude Code
+.claude/
+
+# Superpowers
+.superpowers/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+
+# Rust
+target/
