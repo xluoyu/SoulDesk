@@ -24,12 +24,14 @@ const ChatView: React.FC = () => {
           gap: 10,
         }}
       >
-        <div
+        <img
+          src="/ashin.jpg"
+          alt="AI"
           style={{
             width: 32,
             height: 32,
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #e94560, #c23152)',
+            objectFit: 'cover',
           }}
         />
         <div style={{ flex: 1 }}>
@@ -74,13 +76,15 @@ const ChatView: React.FC = () => {
         ))}
         {isLoading && (
           <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'flex-start' }}>
-            <div
+            <img
+              src="/ashin.jpg"
+              alt="AI"
               style={{
                 width: 34,
                 height: 34,
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #e94560, #c23152)',
                 flexShrink: 0,
+                objectFit: 'cover',
               }}
             />
             <div

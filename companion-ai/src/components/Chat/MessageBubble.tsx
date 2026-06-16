@@ -23,13 +23,15 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
       }}
     >
       {!isUser && (
-        <div
+        <img
+          src="/ashin.jpg"
+          alt="AI"
           style={{
             width: 34,
             height: 34,
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #e94560, #c23152)',
             flexShrink: 0,
+            objectFit: 'cover',
           }}
         />
       )}
