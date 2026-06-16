@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useChatStore } from '../../stores/chatStore';
+import { showFloatingWidget } from '../../services/tauriBridge';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 
@@ -10,6 +11,10 @@ const ChatView: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleClose = async () => {
+    await showFloatingWidget();
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -40,6 +45,7 @@ const ChatView: React.FC = () => {
           </div>
         </div>
         <div
+          onClick={handleClose}
           style={{
             color: 'var(--text-secondary)',
             fontSize: 18,
