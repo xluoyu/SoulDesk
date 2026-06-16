@@ -31,3 +31,16 @@ export interface AIProviderConfig {
   temperature: number;
   max_tokens: number;
 }
+
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  is_active: boolean;
+  system_prompt: string;
+}
+
+export interface UploadSkillRequest {
+  dir_path: string;
+  content: string;
+}

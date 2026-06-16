@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 
 interface FloatingWidgetProps {
   hasNotification?: boolean;

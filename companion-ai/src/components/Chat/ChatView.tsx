@@ -1,20 +1,21 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useChatStore } from '../../stores/chatStore';
-import { showFloatingWidget } from '../../services/tauriBridge';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
+import SkillManager from '../Skill/SkillManager';
 
 const ChatView: React.FC = () => {
   const { messages, isLoading, send } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showSkillManager, setShowSkillManager] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleClose = async () => {
-    await showFloatingWidget();
-  };
+  if (showSkillManager) {
+    return <SkillManager onClose={() => setShowSkillManager(false)} />;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -45,7 +46,7 @@ const ChatView: React.FC = () => {
           </div>
         </div>
         <div
-          onClick={handleClose}
+          onClick={() => setShowSkillManager(true)}
           style={{
             color: 'var(--text-secondary)',
             fontSize: 18,
