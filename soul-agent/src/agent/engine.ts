@@ -4,6 +4,7 @@ import { loadRole } from "../role/loader.js";
 import { buildSystemPrompt } from "../role/prompt.js";
 import { createSkillTools } from "../tools/skill.js";
 import { recallMemoryTool, storeMemoryTool } from "../tools/memory.js";
+import { searchWebTool } from "../tools/search.js";
 import { ToolDefinition, toLangChainTools } from "../tools/registry.js";
 import { MemoryManager } from "../memory/manager.js";
 import db from "../db/database.js";
@@ -55,7 +56,7 @@ export class AgentEngine {
 
     // 构建工具列表
     const skillTools = createSkillTools(role_id);
-    const allToolDefs: ToolDefinition[] = [...skillTools, recallMemoryTool, storeMemoryTool];
+    const allToolDefs: ToolDefinition[] = [...skillTools, recallMemoryTool, storeMemoryTool, searchWebTool];
     const langChainTools = toLangChainTools(allToolDefs);
 
     // 构建记忆上下文
