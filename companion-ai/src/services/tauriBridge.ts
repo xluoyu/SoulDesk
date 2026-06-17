@@ -1,9 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { SendMessageRequest, SendMessageResponse, Skill, UploadSkillRequest } from '../types';
-
-export async function sendMessage(request: SendMessageRequest): Promise<SendMessageResponse> {
-  return await invoke<SendMessageResponse>('send_message', { request });
-}
 
 // Window management
 export async function showChatWindow(): Promise<void> {
@@ -30,27 +25,24 @@ export async function closeSettingsWindow(): Promise<void> {
   await invoke('close_settings_window');
 }
 
-// Skill management
-export async function uploadSkill(request: UploadSkillRequest): Promise<Skill> {
-  return await invoke<Skill>('upload_skill', { request });
+// Settings (local JSON file)
+export interface Settings {
+  model: {
+    provider: string;
+    api_key: string;
+    base_url: string;
+    model_name: string;
+  };
+  agent: {
+    port: number;
+    auto_start: boolean;
+  };
 }
 
-export async function listSkills(): Promise<Skill[]> {
-  return await invoke<Skill[]>('list_skills');
+export async function getSettings(): Promise<Settings> {
+  return await invoke<Settings>('get_settings');
 }
 
-export async function toggleSkill(skillId: string, isActive: boolean): Promise<void> {
-  await invoke('toggle_skill', { skillId, isActive });
-}
-
-export async function deleteSkill(skillId: string): Promise<void> {
-  await invoke('delete_skill', { skillId });
-}
-
-export async function getActiveSkills(): Promise<Skill[]> {
-  return await invoke<Skill[]>('get_active_skills');
-}
-
-export async function switchRole(skillId: string): Promise<{ session_id: string; skill_id: string }> {
-  return await invoke('switch_role', { newSkillId: skillId });
+export async function saveSettings(settings: Settings): Promise<void> {
+  await invoke('save_settings', { settings });
 }

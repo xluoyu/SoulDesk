@@ -1,40 +1,28 @@
 import { create } from 'zustand';
-import type { ChatMessage, AIProviderConfig } from '../types';
-import { sendMessage, switchRole } from '../services/tauriBridge';
+import type { ChatMessage } from '../types';
+import { streamChat } from '../services/agentClient';
 
 interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   sessionId: string;
-  skillId: string;
-  providerConfig: AIProviderConfig;
+  roleId: string;
   addMessage: (msg: ChatMessage) => void;
   send: (content: string) => Promise<void>;
-  setProviderConfig: (config: AIProviderConfig) => void;
-  switchToRole: (skillId: string) => Promise<void>;
+  setRoleId: (roleId: string) => void;
   clearMessages: () => void;
 }
-
-const DEFAULT_CONFIG: AIProviderConfig = {
-  provider_type: 'openai',
-  api_key: '',
-  base_url: 'https://api.openai.com',
-  model: 'gpt-4o',
-  temperature: 0.7,
-  max_tokens: 2048,
-};
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isLoading: false,
   sessionId: crypto.randomUUID(),
-  skillId: 'default',
-  providerConfig: DEFAULT_CONFIG,
+  roleId: 'default',
 
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
 
   send: async (content: string) => {
-    const { sessionId, providerConfig } = get();
+    const { sessionId, roleId } = get();
 
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
@@ -49,17 +37,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }));
 
     try {
-      const response = await sendMessage({
-        session_id: sessionId,
-        content,
-        ...providerConfig,
-      });
+      let fullContent = '';
+      for await (const event of streamChat(content, sessionId, roleId)) {
+        if (event.type === 'done') {
+          fullContent = event.content;
+        } else if (event.type === 'error') {
+          console.error('Chat error:', event.content);
+        }
+      }
 
       const assistantMsg: ChatMessage = {
-        id: response.message_id,
+        id: crypto.randomUUID(),
         session_id: sessionId,
         role: 'assistant',
-        content: response.content,
+        content: fullContent,
         timestamp: new Date().toISOString(),
       };
       set((state) => ({
@@ -72,20 +63,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  setProviderConfig: (config) => set({ providerConfig: config }),
-
-  switchToRole: async (skillId: string) => {
-    try {
-      const result = await switchRole(skillId);
-      set({
-        sessionId: result.session_id,
-        skillId: result.skill_id,
-        messages: [],
-      });
-    } catch (error) {
-      console.error('Failed to switch role:', error);
-    }
-  },
+  setRoleId: (roleId: string) => set({ roleId }),
 
   clearMessages: () => set({ messages: [], sessionId: crypto.randomUUID() }),
 }));

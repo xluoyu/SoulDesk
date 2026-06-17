@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import type { Skill } from '../../types';
-import { listSkills, uploadSkill, toggleSkill, deleteSkill } from '../../services/tauriBridge';
+import type { RoleInfo } from '../../types';
+import { getRoles, reloadRoles } from '../../services/agentClient';
+import { getSettings, saveSettings } from '../../services/tauriBridge';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
-type MenuKey = 'model' | 'skill' | 'general';
+type MenuKey = 'model' | 'role' | 'general';
 
 interface MenuItem {
   key: MenuKey;
@@ -13,34 +14,40 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { key: 'model', label: '模型配置', icon: '⚙' },
-  { key: 'skill', label: '角色管理', icon: '👤' },
+  { key: 'role', label: '角色管理', icon: '👤' },
   { key: 'general', label: '通用设置', icon: '🔧' },
 ];
 
 const SettingsView: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<MenuKey>('model');
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const [roles, setRoles] = useState<RoleInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
 
   // Model config state
-  const [providerType, setProviderType] = useState('openai');
+  const [provider, setProvider] = useState('deepseek');
   const [apiKey, setApiKey] = useState('');
-  const [baseUrl, setBaseUrl] = useState('https://api.openai.com');
-  const [model, setModel] = useState('gpt-4o');
-  const [temperature, setTemperature] = useState(0.7);
-  const [maxTokens, setMaxTokens] = useState(2048);
+  const [baseUrl, setBaseUrl] = useState('https://api.deepseek.com/v1');
+  const [modelName, setModelName] = useState('deepseek-chat');
 
   useEffect(() => {
-    loadSkills();
+    loadData();
   }, []);
 
-  const loadSkills = async () => {
+  const loadData = async () => {
     try {
-      const result = await listSkills();
-      setSkills(result);
+      const [rolesResult, settings] = await Promise.all([
+        getRoles(),
+        getSettings(),
+      ]);
+      setRoles(rolesResult);
+      if (settings.model) {
+        setProvider(settings.model.provider || 'deepseek');
+        setApiKey(settings.model.api_key || '');
+        setBaseUrl(settings.model.base_url || 'https://api.deepseek.com/v1');
+        setModelName(settings.model.model_name || 'deepseek-chat');
+      }
     } catch (error) {
-      console.error('Failed to load skills:', error);
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
@@ -51,38 +58,17 @@ const SettingsView: React.FC = () => {
     await win.hide();
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
+  const handleSaveModel = async () => {
     try {
-      const content = await file.text();
-      await uploadSkill({ dir_path: file.name, content });
-      await loadSkills();
+      await saveSettings({
+        model: { provider, api_key: apiKey, base_url: baseUrl, model_name: modelName },
+        agent: { port: 3456, auto_start: true },
+      });
+      // 通知 Agent 后端重新加载配置
+      await reloadRoles();
+      alert('保存成功');
     } catch (error) {
-      console.error('Failed to upload skill:', error);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleToggle = async (skillId: string, currentActive: boolean) => {
-    try {
-      await toggleSkill(skillId, !currentActive);
-      await loadSkills();
-    } catch (error) {
-      console.error('Failed to toggle skill:', error);
-    }
-  };
-
-  const handleDelete = async (skillId: string) => {
-    if (!confirm('确定要删除这个角色设定吗？')) return;
-    try {
-      await deleteSkill(skillId);
-      await loadSkills();
-    } catch (error) {
-      console.error('Failed to delete skill:', error);
+      console.error('Failed to save settings:', error);
     }
   };
 
@@ -93,10 +79,11 @@ const SettingsView: React.FC = () => {
       <div style={fieldGroup}>
         <label style={labelStyle}>提供商</label>
         <select
-          value={providerType}
-          onChange={(e) => setProviderType(e.target.value)}
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
           style={inputStyle}
         >
+          <option value="deepseek">DeepSeek</option>
           <option value="openai">OpenAI</option>
           <option value="custom">自定义</option>
         </select>
@@ -125,66 +112,34 @@ const SettingsView: React.FC = () => {
       <div style={fieldGroup}>
         <label style={labelStyle}>模型</label>
         <input
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
+          value={modelName}
+          onChange={(e) => setModelName(e.target.value)}
           style={inputStyle}
         />
       </div>
 
-      <div style={{ display: 'flex', gap: 16 }}>
-        <div style={{ flex: 1 }}>
-          <label style={labelStyle}>Temperature ({temperature})</label>
-          <input
-            type="range"
-            min="0"
-            max="2"
-            step="0.1"
-            value={temperature}
-            onChange={(e) => setTemperature(parseFloat(e.target.value))}
-            style={{ width: '100%', marginTop: 8 }}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={labelStyle}>Max Tokens</label>
-          <input
-            type="number"
-            value={maxTokens}
-            onChange={(e) => setMaxTokens(parseInt(e.target.value))}
-            style={inputStyle}
-          />
-        </div>
-      </div>
+      <button onClick={handleSaveModel} style={saveButtonStyle}>
+        保存配置
+      </button>
     </div>
   );
 
-  const renderSkillSettings = () => (
+  const renderRoleSettings = () => (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h3 style={sectionTitle}>角色管理</h3>
-        <label style={buttonStyle}>
-          {uploading ? '上传中...' : '导入角色'}
-          <input
-            type="file"
-            accept=".md,.txt"
-            onChange={handleFileUpload}
-            style={{ display: 'none' }}
-            disabled={uploading}
-          />
-        </label>
-      </div>
+      <h3 style={sectionTitle}>角色管理</h3>
 
       {loading ? (
         <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
           加载中...
         </div>
-      ) : skills.length === 0 ? (
+      ) : roles.length === 0 ? (
         <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
-          还没有角色设定
+          还没有角色，请导入角色 Skill 包到 ~/.souldesk/roles/ 目录
         </div>
       ) : (
-        skills.map((skill) => (
+        roles.map((role) => (
           <div
-            key={skill.id}
+            key={role.id}
             style={{
               background: 'rgba(255,255,255,0.03)',
               borderRadius: 8,
@@ -195,42 +150,14 @@ const SettingsView: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>
-                  {skill.name}
+                  {role.name}
                 </div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 4 }}>
-                  {skill.description || '无描述'}
+                  {role.description || '无描述'}
                 </div>
-              </div>
-              <div
-                onClick={() => handleToggle(skill.id, skill.is_active)}
-                style={{
-                  width: 40,
-                  height: 22,
-                  borderRadius: 11,
-                  background: skill.is_active ? 'var(--accent)' : '#444',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s',
-                }}
-              >
-                <div
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: '50%',
-                    background: 'white',
-                    position: 'absolute',
-                    top: 2,
-                    left: skill.is_active ? 20 : 2,
-                    transition: 'left 0.2s',
-                  }}
-                />
-              </div>
-              <div
-                onClick={() => handleDelete(skill.id)}
-                style={{ color: 'var(--text-muted)', fontSize: 14, cursor: 'pointer', padding: '4px 8px' }}
-              >
-                ×
+                <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
+                  ID: {role.id}
+                </div>
               </div>
             </div>
           </div>
@@ -270,20 +197,13 @@ const SettingsView: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <div style={fieldGroup}>
-        <label style={labelStyle}>免打扰时段</label>
-        <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 4 }}>
-          设置后该时段不会收到主动推送
-        </div>
-      </div>
     </div>
   );
 
   const renderContent = () => {
     switch (activeMenu) {
       case 'model': return renderModelSettings();
-      case 'skill': return renderSkillSettings();
+      case 'role': return renderRoleSettings();
       case 'general': return renderGeneralSettings();
     }
   };
@@ -300,7 +220,6 @@ const SettingsView: React.FC = () => {
           flexDirection: 'column',
         }}
       >
-        {/* Sidebar header */}
         <div
           style={{
             padding: '16px',
@@ -319,7 +238,6 @@ const SettingsView: React.FC = () => {
           <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>设置</span>
         </div>
 
-        {/* Menu items */}
         <div style={{ flex: 1, padding: '8px 0' }}>
           {menuItems.map((item) => (
             <div
@@ -384,13 +302,15 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 };
 
-const buttonStyle: React.CSSProperties = {
-  padding: '6px 12px',
+const saveButtonStyle: React.CSSProperties = {
+  padding: '8px 16px',
   background: 'var(--accent)',
   borderRadius: 6,
   color: 'white',
-  fontSize: 12,
+  fontSize: 13,
   cursor: 'pointer',
+  border: 'none',
+  marginTop: 8,
 };
 
 const toggleTrack: React.CSSProperties = {
