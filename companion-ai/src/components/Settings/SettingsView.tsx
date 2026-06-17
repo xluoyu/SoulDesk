@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Select, Switch, Button, Form, Divider, Typography, Spin, Card, Tag } from 'antd';
+import { Input, Select, Switch, Button, Form, Divider, Typography, Spin, Card, Tag, Popconfirm, message } from 'antd';
 import {
   SettingOutlined,
   UserOutlined,
@@ -9,9 +9,12 @@ import {
   KeyOutlined,
   LinkOutlined,
   ThunderboltOutlined,
+  PlusOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
+import RoleCreator from './RoleCreator';
 import type { RoleInfo } from '../../types';
-import { getRoles, reloadRoles } from '../../services/agentClient';
+import { getRoles, reloadRoles, deleteRole } from '../../services/agentClient';
 import { getSettings, saveSettings, type Settings } from '../../services/tauriBridge';
 import { setThemeMode } from '../../services/theme';
 
@@ -40,6 +43,7 @@ const SettingsView: React.FC<Props> = ({ onThemeChange }) => {
   const [roles, setRoles] = useState<RoleInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [roleCreatorOpen, setRoleCreatorOpen] = useState(false);
 
   // Model config
   const [accessMode, setAccessMode] = useState<string>('openai');
@@ -222,10 +226,19 @@ const SettingsView: React.FC<Props> = ({ onThemeChange }) => {
 
   const renderRoleSettings = () => (
     <div>
-      <Title level={5} style={{ color: 'var(--text-primary)', marginBottom: 24 }}>
-        <UserOutlined style={{ marginRight: 8 }} />
-        角色管理
-      </Title>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <Title level={5} style={{ color: 'var(--text-primary)', margin: 0 }}>
+          <UserOutlined style={{ marginRight: 8 }} />
+          角色管理
+        </Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setRoleCreatorOpen(true)}
+        >
+          新建角色
+        </Button>
+      </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 40 }}>
@@ -258,6 +271,27 @@ const SettingsView: React.FC<Props> = ({ onThemeChange }) => {
                 </div>
                 <Tag style={{ marginTop: 4, fontSize: 11 }}>{role.id}</Tag>
               </div>
+              <Popconfirm
+                title="确定删除这个角色？"
+                onConfirm={async () => {
+                  try {
+                    await deleteRole(role.id);
+                    message.success('角色已删除');
+                    loadData();
+                  } catch (e) {
+                    message.error('删除失败');
+                  }
+                }}
+                okText="删除"
+                cancelText="取消"
+              >
+                <Button
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  size="small"
+                />
+              </Popconfirm>
             </div>
           </Card>
         ))
@@ -388,6 +422,15 @@ const SettingsView: React.FC<Props> = ({ onThemeChange }) => {
 
       {/* Right content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 28 }}>{renderContent()}</div>
+
+      <RoleCreator
+        open={roleCreatorOpen}
+        onClose={() => setRoleCreatorOpen(false)}
+        onCreated={() => {
+          setRoleCreatorOpen(false);
+          loadData();
+        }}
+      />
     </div>
   );
 };

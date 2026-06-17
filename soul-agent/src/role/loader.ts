@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import matter from "gray-matter";
 
-const ROLES_DIR = path.join(process.env.HOME!, ".souldesk", "roles");
+const ROLES_DIR = path.resolve(__dirname, "../../../.souldesk", "roles");
 
 export interface SkillModule {
   name: string;

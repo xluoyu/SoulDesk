@@ -14,7 +14,7 @@ const app = Fastify({ logger: true });
 let agentEngine: AgentEngine | null = null;
 
 function getSettings() {
-  const settingsPath = path.join(process.env.HOME!, ".souldesk", "settings.json");
+  const settingsPath = path.resolve(__dirname, "../../../.souldesk", "settings.json");
   try {
     return JSON.parse(fs.readFileSync(settingsPath, "utf-8"));
   } catch {

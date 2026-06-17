@@ -3,12 +3,15 @@ import { HumanMessage, SystemMessage, ToolMessage, AIMessage } from "@langchain/
 import { loadRole } from "../role/loader.js";
 import { buildSystemPrompt } from "../role/prompt.js";
 import { createSkillTools } from "../tools/skill.js";
+import { createRoleTool } from "../tools/role.js";
 import { recallMemoryTool, storeMemoryTool } from "../tools/memory.js";
 import { searchWebTool } from "../tools/search.js";
 import { ToolDefinition, toLangChainTools } from "../tools/registry.js";
 import { MemoryManager } from "../memory/manager.js";
 import db from "../db/database.js";
 import { v4 as uuid } from "uuid";
+import fs from "fs/promises";
+import path from "path";
 
 export interface ChatRequest {
   message: string;
@@ -48,15 +51,22 @@ export class AgentEngine {
     const { message, session_id, role_id } = request;
     const llm = this.createLLM();
 
-    const role = await loadRole(role_id);
+    const isNuwa = role_id === "__nuwa__";
+    const role = isNuwa ? null : await loadRole(role_id);
     this.ensureSession(session_id, role_id);
     this.saveMessage(session_id, "user", message);
 
     const history = this.getRecentMessages(session_id, 20);
 
     // 构建工具列表
-    const skillTools = createSkillTools(role_id);
-    const allToolDefs: ToolDefinition[] = [...skillTools, recallMemoryTool, storeMemoryTool, searchWebTool];
+    const skillTools = isNuwa ? [] : createSkillTools(role_id);
+    const allToolDefs: ToolDefinition[] = [
+      ...skillTools,
+      ...(isNuwa ? [createRoleTool] : []),
+      recallMemoryTool,
+      storeMemoryTool,
+      searchWebTool,
+    ];
     const langChainTools = toLangChainTools(allToolDefs);
 
     // 构建记忆上下文
@@ -64,7 +74,13 @@ export class AgentEngine {
 
     // 构建 system prompt
     const loadedModules: string[] = [];
-    let systemPrompt = await buildSystemPrompt(role, loadedModules);
+    let systemPrompt: string;
+    if (isNuwa) {
+      const nuwaPath = path.resolve(__dirname, "../skills/nuwa/SKILL.md");
+      systemPrompt = await fs.readFile(nuwaPath, "utf-8");
+    } else {
+      systemPrompt = await buildSystemPrompt(role!, loadedModules);
+    }
     if (memoryContext) {
       systemPrompt += `\n\n## 用户信息\n${memoryContext}`;
     }
@@ -101,7 +117,7 @@ export class AgentEngine {
           }
 
           // 如果是加载模块，更新 system prompt
-          if (toolCall.name === "load_skill_module") {
+          if (toolCall.name === "load_skill_module" && role) {
             loadedModules.push(toolCall.args.module_name);
             systemPrompt = await buildSystemPrompt(role, loadedModules);
             if (memoryContext) {

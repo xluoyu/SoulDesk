@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
@@ -7,6 +7,28 @@ pub struct RoleInfo {
     pub id: String,
     pub name: String,
     pub description: String,
+}
+
+#[derive(Deserialize)]
+pub struct CreateRoleRequest {
+    pub role_id: String,
+    pub name: String,
+    pub description: String,
+    pub skill_md: String,
+    pub personality_md: String,
+    pub speaking_style_md: String,
+    pub relationships_md: String,
+    pub world_setting_md: String,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateRoleRequest {
+    pub role_id: String,
+    pub skill_md: Option<String>,
+    pub personality_md: Option<String>,
+    pub speaking_style_md: Option<String>,
+    pub relationships_md: Option<String>,
+    pub world_setting_md: Option<String>,
 }
 
 fn souldesk_dir() -> PathBuf {
@@ -102,4 +124,66 @@ pub fn list_roles() -> Result<Vec<RoleInfo>, String> {
     }
 
     Ok(roles)
+}
+
+#[tauri::command]
+pub fn create_role(request: CreateRoleRequest) -> Result<RoleInfo, String> {
+    let role_dir = roles_dir().join(&request.role_id);
+
+    if role_dir.exists() {
+        return Err(format!("角色 '{}' 已存在", request.role_id));
+    }
+
+    fs::create_dir_all(&role_dir).map_err(|e| e.to_string())?;
+
+    fs::write(role_dir.join("SKILL.md"), &request.skill_md).map_err(|e| e.to_string())?;
+    fs::write(role_dir.join("personality.md"), &request.personality_md).map_err(|e| e.to_string())?;
+    fs::write(role_dir.join("speaking_style.md"), &request.speaking_style_md).map_err(|e| e.to_string())?;
+    fs::write(role_dir.join("relationships.md"), &request.relationships_md).map_err(|e| e.to_string())?;
+    fs::write(role_dir.join("world_setting.md"), &request.world_setting_md).map_err(|e| e.to_string())?;
+
+    Ok(RoleInfo {
+        id: request.role_id,
+        name: request.name,
+        description: request.description,
+    })
+}
+
+#[tauri::command]
+pub fn update_role(request: UpdateRoleRequest) -> Result<(), String> {
+    let role_dir = roles_dir().join(&request.role_id);
+
+    if !role_dir.exists() {
+        return Err(format!("角色 '{}' 不存在", request.role_id));
+    }
+
+    if let Some(content) = request.skill_md {
+        fs::write(role_dir.join("SKILL.md"), content).map_err(|e| e.to_string())?;
+    }
+    if let Some(content) = request.personality_md {
+        fs::write(role_dir.join("personality.md"), content).map_err(|e| e.to_string())?;
+    }
+    if let Some(content) = request.speaking_style_md {
+        fs::write(role_dir.join("speaking_style.md"), content).map_err(|e| e.to_string())?;
+    }
+    if let Some(content) = request.relationships_md {
+        fs::write(role_dir.join("relationships.md"), content).map_err(|e| e.to_string())?;
+    }
+    if let Some(content) = request.world_setting_md {
+        fs::write(role_dir.join("world_setting.md"), content).map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_role(role_id: String) -> Result<(), String> {
+    let role_dir = roles_dir().join(&role_id);
+
+    if !role_dir.exists() {
+        return Err(format!("角色 '{}' 不存在", role_id));
+    }
+
+    fs::remove_dir_all(&role_dir).map_err(|e| e.to_string())?;
+    Ok(())
 }

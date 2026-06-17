@@ -58,6 +58,38 @@ export async function getRoles(): Promise<RoleInfo[]> {
   return await invoke<RoleInfo[]>('list_roles');
 }
 
+export interface CreateRoleRequest {
+  role_id: string;
+  name: string;
+  description: string;
+  skill_md: string;
+  personality_md: string;
+  speaking_style_md: string;
+  relationships_md: string;
+  world_setting_md: string;
+}
+
+export async function createRole(request: CreateRoleRequest): Promise<RoleInfo> {
+  return await invoke<RoleInfo>('create_role', { request });
+}
+
+export interface UpdateRoleRequest {
+  role_id: string;
+  skill_md?: string;
+  personality_md?: string;
+  speaking_style_md?: string;
+  relationships_md?: string;
+  world_setting_md?: string;
+}
+
+export async function updateRole(request: UpdateRoleRequest): Promise<void> {
+  return await invoke('update_role', { request });
+}
+
+export async function deleteRole(roleId: string): Promise<void> {
+  return await invoke('delete_role', { roleId });
+}
+
 export async function getRole(id: string) {
   const res = await fetch(`${AGENT_URL}/roles/${id}`);
   return res.json();

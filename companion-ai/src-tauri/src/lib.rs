@@ -12,6 +12,9 @@ pub fn run() {
             commands::window::open_settings_window,
             commands::window::close_settings_window,
             commands::role::list_roles,
+            commands::role::create_role,
+            commands::role::update_role,
+            commands::role::delete_role,
             commands::settings::get_settings,
             commands::settings::save_settings,
         ])

@@ -2,10 +2,10 @@ import Database, { Database as DatabaseType } from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 
-const DB_DIR = path.join(process.env.HOME!, ".souldesk");
-const DB_PATH = path.join(DB_DIR, "data.db");
+const SOULDESK_DIR = path.resolve(__dirname, "../../../.souldesk");
+const DB_PATH = path.join(SOULDESK_DIR, "data.db");
 
-fs.mkdirSync(DB_DIR, { recursive: true });
+fs.mkdirSync(SOULDESK_DIR, { recursive: true });
 
 const db: DatabaseType = new Database(DB_PATH);
 
