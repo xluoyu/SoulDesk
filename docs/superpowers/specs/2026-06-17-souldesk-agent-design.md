@@ -271,22 +271,23 @@ SystemMessage 内容:
 两个独立项目通过共享数据目录协调角色 Skill 文件：
 
 ```
-~/.souldesk/
-├── roles/                    # 角色 Skill 文件
-│   ├── xianna/
-│   │   ├── SKILL.md
-│   │   ├── personality.md
-│   │   └── ...
-│   ├── naruto/
-│   │   └── ...
-│   └── huashu-nuwa/
-│       └── ...
-├── data.db                   # Agent SQLite 数据库
-└── settings.json             # 桌面端配置（API Key 等）
+my-side/
+├── companion-ai/              # Tauri 桌面端
+├── soul-agent/                # Agent 后端
+└── .souldesk/                 # 共享数据目录
+    ├── roles/                 # 角色 Skill 文件
+    │   ├── xianna/
+    │   │   ├── SKILL.md
+    │   │   ├── personality.md
+    │   │   └── ...
+    │   └── naruto/
+    │       └── ...
+    ├── data.db                # Agent SQLite 数据库
+    └── settings.json          # 桌面端配置（API Key 等）
 ```
 
-- **桌面端**：导入 Skill 包时，解压到 `~/.souldesk/roles/<role_id>/`
-- **Agent 后端**：从 `~/.souldesk/roles/` 读取角色文件
+- **桌面端**：导入 Skill 包时，解压到 `.souldesk/roles/<role_id>/`
+- **Agent 后端**：从 `.souldesk/roles/` 读取角色文件
 - **两个项目独立运行**，通过共享目录协调，互不依赖
 
 ### 5.2 Skill 包结构

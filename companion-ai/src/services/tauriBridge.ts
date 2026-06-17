@@ -25,13 +25,22 @@ export async function closeSettingsWindow(): Promise<void> {
   await invoke('close_settings_window');
 }
 
-// Settings (local JSON file)
+// Settings
 export interface Settings {
   model: {
-    provider: string;
+    access_mode: string;
     api_key: string;
     base_url: string;
     model_name: string;
+  };
+  general: {
+    theme_mode: string;
+    floating_widget: boolean;
+    proactive_push: boolean;
+  };
+  search: {
+    enabled: boolean;
+    tavily_api_key: string;
   };
   agent: {
     port: number;

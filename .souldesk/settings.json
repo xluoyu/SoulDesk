@@ -1,0 +1,21 @@
+{
+  "model": {
+    "access_mode": "openai",
+    "api_key": "",
+    "base_url": "",
+    "model_name": ""
+  },
+  "general": {
+    "theme_color": "#d97706",
+    "floating_widget": true,
+    "proactive_push": false
+  },
+  "search": {
+    "enabled": false,
+    "tavily_api_key": ""
+  },
+  "agent": {
+    "port": 3456,
+    "auto_start": true
+  }
+}

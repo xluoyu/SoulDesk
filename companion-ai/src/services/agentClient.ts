@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core';
+
 const AGENT_URL = "http://localhost:3456";
 
 export interface ChatEvent {
@@ -53,8 +55,7 @@ export async function* streamChat(
 }
 
 export async function getRoles(): Promise<RoleInfo[]> {
-  const res = await fetch(`${AGENT_URL}/roles`);
-  return res.json();
+  return await invoke<RoleInfo[]>('list_roles');
 }
 
 export async function getRole(id: string) {

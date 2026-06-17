@@ -37,6 +37,10 @@ function initEngine() {
     settings.model.base_url,
     settings.model.model_name
   );
+  // 同步搜索配置到环境变量
+  if (settings.search?.tavily_api_key) {
+    process.env.TAVILY_API_KEY = settings.search.tavily_api_key;
+  }
 }
 
 app.register(cors, { origin: true });

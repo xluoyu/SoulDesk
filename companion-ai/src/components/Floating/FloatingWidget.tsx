@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Badge } from 'antd';
+import { showChatWindow } from '../../services/tauriBridge';
 
 interface FloatingWidgetProps {
   hasNotification?: boolean;
@@ -12,19 +14,13 @@ const FloatingWidget: React.FC<FloatingWidgetProps> = ({
   onClick,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   const handleClick = async () => {
-    if (isDragging) return;
-    onClick?.();
-  };
-
-  const handleMouseDown = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseMove = () => {
-    setIsDragging(true);
+    if (onClick) {
+      onClick();
+    } else {
+      await showChatWindow();
+    }
   };
 
   return (
@@ -38,8 +34,6 @@ const FloatingWidget: React.FC<FloatingWidgetProps> = ({
         justifyContent: 'center',
         position: 'relative',
       }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
     >
       {/* Notification preview tooltip */}
       {hasNotification && isHovered && notificationPreview && (
@@ -106,45 +100,23 @@ const FloatingWidget: React.FC<FloatingWidgetProps> = ({
         )}
 
         {/* Avatar */}
-        <img
-          src="/ashin.jpg"
-          alt="AI"
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            objectFit: 'cover',
-            boxShadow: hasNotification
-              ? '0 4px 20px rgba(233, 69, 96, 0.6)'
-              : '0 4px 20px rgba(233, 69, 96, 0.4)',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        />
-
-        {/* Notification badge */}
-        {hasNotification && (
-          <div
+        <Badge dot={hasNotification} offset={[-4, 4]}>
+          <img
+            src="/ashin.jpg"
+            alt="AI"
             style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              width: 20,
-              height: 20,
+              width: 64,
+              height: 64,
               borderRadius: '50%',
-              background: '#ff4757',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: 10,
-              fontWeight: 600,
-              zIndex: 2,
+              objectFit: 'cover',
+              boxShadow: hasNotification
+                ? '0 4px 20px rgba(233, 69, 96, 0.6)'
+                : '0 4px 20px rgba(233, 69, 96, 0.4)',
+              position: 'relative',
+              zIndex: 1,
             }}
-          >
-            1
-          </div>
-        )}
+          />
+        </Badge>
       </div>
 
       <style>{`

@@ -74,7 +74,7 @@ pub async fn open_settings_window(app: tauri::AppHandle) -> Result<(), String> {
 
     WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("index.html".into()))
         .title("设置")
-        .inner_size(400.0, 500.0)
+        .inner_size(640.0, 520.0)
         .resizable(true)
         .decorations(true)
         .center()

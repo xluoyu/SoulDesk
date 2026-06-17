@@ -2,29 +2,107 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Settings {
+    #[serde(default)]
     pub model: ModelSettings,
+    #[serde(default)]
+    pub general: GeneralSettings,
+    #[serde(default)]
+    pub search: SearchSettings,
+    #[serde(default)]
     pub agent: AgentSettings,
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            model: ModelSettings::default(),
+            general: GeneralSettings::default(),
+            search: SearchSettings::default(),
+            agent: AgentSettings::default(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ModelSettings {
-    pub provider: String,
+    /// "openai" or "anthropic"
+    pub access_mode: String,
     pub api_key: String,
     pub base_url: String,
     pub model_name: String,
 }
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+impl Default for ModelSettings {
+    fn default() -> Self {
+        Self {
+            access_mode: "openai".into(),
+            api_key: String::new(),
+            base_url: String::new(),
+            model_name: String::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct GeneralSettings {
+    /// "dark", "light", or "system"
+    pub theme_mode: String,
+    pub floating_widget: bool,
+    pub proactive_push: bool,
+}
+
+impl Default for GeneralSettings {
+    fn default() -> Self {
+        Self {
+            theme_mode: "dark".into(),
+            floating_widget: true,
+            proactive_push: false,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SearchSettings {
+    pub enabled: bool,
+    pub tavily_api_key: String,
+}
+
+impl Default for SearchSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            tavily_api_key: String::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AgentSettings {
     pub port: u16,
     pub auto_start: bool,
 }
 
+impl Default for AgentSettings {
+    fn default() -> Self {
+        Self {
+            port: 3456,
+            auto_start: true,
+        }
+    }
+}
+
+fn souldesk_dir() -> PathBuf {
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    manifest_dir
+        .join("..")  // companion-ai/
+        .join("..")  // my-side/
+        .join(".souldesk")
+}
+
 fn settings_path() -> PathBuf {
-    let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    home.join(".souldesk").join("settings.json")
+    souldesk_dir().join("settings.json")
 }
 
 #[tauri::command]

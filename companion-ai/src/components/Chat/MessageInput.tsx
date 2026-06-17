@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Input, Button } from 'antd';
+import { SendOutlined } from '@ant-design/icons';
 
 interface Props {
   onSend: (content: string) => void;
@@ -30,50 +32,29 @@ const MessageInput: React.FC<Props> = ({ onSend, disabled }) => {
         borderTop: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
-        gap: 10,
+        gap: 8,
       }}
     >
-      <div
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+        placeholder="输入消息..."
+        variant="borderless"
         style={{
-          flex: 1,
-          background: 'rgba(255,255,255,0.06)',
-          borderRadius: 6,
-          padding: '10px 14px',
+          background: 'var(--input-bg)',
+          borderRadius: 8,
         }}
-      >
-        <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          placeholder="输入消息..."
-          style={{
-            width: '100%',
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: 'var(--text-primary)',
-            fontSize: 13,
-          }}
-        />
-      </div>
-      <div
+      />
+      <Button
+        type="primary"
+        shape="circle"
+        icon={<SendOutlined />}
         onClick={handleSend}
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: '50%',
-          background: disabled ? '#666' : 'var(--accent)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: 15,
-          cursor: disabled ? 'not-allowed' : 'pointer',
-        }}
-      >
-        ↑
-      </div>
+        disabled={disabled || !value.trim()}
+        size="small"
+      />
     </div>
   );
 };

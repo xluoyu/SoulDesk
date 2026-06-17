@@ -1,4 +1,6 @@
 import React, { useRef, useEffect } from 'react';
+import { Spin } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
 import { useChatStore } from '../../stores/chatStore';
 import { openSettingsWindow } from '../../services/tauriBridge';
 import MessageBubble from './MessageBubble';
@@ -21,7 +23,7 @@ const ChatView: React.FC = () => {
       {/* Header */}
       <div
         style={{
-          padding: '14px 16px',
+          padding: '12px 16px',
           background: 'var(--bg-primary)',
           borderBottom: '1px solid var(--border)',
           display: 'flex',
@@ -44,16 +46,15 @@ const ChatView: React.FC = () => {
             Companion AI
           </div>
         </div>
-        <div
+        <SettingOutlined
           onClick={handleSettings}
           style={{
             color: 'var(--text-secondary)',
-            fontSize: 18,
+            fontSize: 16,
             cursor: 'pointer',
+            padding: 4,
           }}
-        >
-          ⚙
-        </div>
+        />
       </div>
 
       {/* Messages */}
@@ -100,8 +101,12 @@ const ChatView: React.FC = () => {
                 padding: '10px 14px',
                 color: 'var(--text-secondary)',
                 fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
               }}
             >
+              <Spin size="small" />
               思考中...
             </div>
           </div>

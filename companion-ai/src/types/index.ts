@@ -11,12 +11,3 @@ export interface RoleInfo {
   name: string;
   description: string;
 }
-
-export interface AIProviderConfig {
-  provider_type: string;
-  api_key: string;
-  base_url: string;
-  model: string;
-  temperature: number;
-  max_tokens: number;
-}
