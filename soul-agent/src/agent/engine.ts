@@ -1,4 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
+import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage, SystemMessage, ToolMessage, AIMessage } from "@langchain/core/messages";
 import { loadRole } from "../role/loader.js";
 import { buildSystemPrompt } from "../role/prompt.js";
@@ -30,14 +31,25 @@ export class AgentEngine {
   private apiKey: string;
   private baseURL: string;
   private modelName: string;
+  private accessMode: string;
 
-  constructor(apiKey: string, baseURL: string, modelName: string) {
+  constructor(apiKey: string, baseURL: string, modelName: string, accessMode: string = "openai") {
     this.apiKey = apiKey;
     this.baseURL = baseURL;
     this.modelName = modelName;
+    this.accessMode = accessMode;
   }
 
   private createLLM() {
+    if (this.accessMode === "anthropic") {
+      return new ChatAnthropic({
+        apiKey: this.apiKey,
+        modelName: this.modelName,
+        temperature: 0.7,
+        streaming: true,
+        ...(this.baseURL ? { anthropicApiUrl: this.baseURL } : {}),
+      });
+    }
     return new ChatOpenAI({
       configuration: { baseURL: this.baseURL },
       apiKey: this.apiKey,
@@ -96,53 +108,107 @@ export class AgentEngine {
 
     // Agent 循环
     const maxRounds = 10;
+    let hasToolCalls = false;
     for (let round = 0; round < maxRounds; round++) {
       const llmWithTools = llm.bindTools(langChainTools);
-      const response = await llmWithTools.invoke(messages);
-      messages.push(response as AIMessage);
 
-      if (response.tool_calls && response.tool_calls.length > 0) {
-        for (const toolCall of response.tool_calls) {
-          const tool = allToolDefs.find(t => t.name === toolCall.name);
-          let result: string;
+      if (hasToolCalls) {
+        // 工具调用轮：用 invoke 等待完整响应
+        const response = await llmWithTools.invoke(messages);
+        messages.push(response as AIMessage);
 
-          if (tool) {
-            try {
-              result = await tool.handler(toolCall.args);
-            } catch (e) {
-              result = `工具执行错误: ${e}`;
+        if (response.tool_calls && response.tool_calls.length > 0) {
+          for (const toolCall of response.tool_calls) {
+            const tool = allToolDefs.find(t => t.name === toolCall.name);
+            let result: string;
+
+            if (tool) {
+              try {
+                result = await tool.handler(toolCall.args);
+              } catch (e) {
+                result = `工具执行错误: ${e}`;
+              }
+            } else {
+              result = `未知工具: ${toolCall.name}`;
             }
-          } else {
-            result = `未知工具: ${toolCall.name}`;
-          }
 
-          // 如果是加载模块，更新 system prompt
-          if (toolCall.name === "load_skill_module" && role) {
-            loadedModules.push(toolCall.args.module_name);
-            systemPrompt = await buildSystemPrompt(role, loadedModules);
-            if (memoryContext) {
-              systemPrompt += `\n\n## 用户信息\n${memoryContext}`;
+            if (toolCall.name === "load_skill_module" && role) {
+              loadedModules.push(toolCall.args.module_name);
+              systemPrompt = await buildSystemPrompt(role, loadedModules);
+              if (memoryContext) {
+                systemPrompt += `\n\n## 用户信息\n${memoryContext}`;
+              }
+              messages[0] = new SystemMessage({ content: systemPrompt });
             }
-            messages[0] = new SystemMessage({ content: systemPrompt });
-          }
 
-          messages.push(new ToolMessage({
-            content: result,
-            tool_call_id: toolCall.id!,
-          }));
+            messages.push(new ToolMessage({
+              content: result,
+              tool_call_id: toolCall.id!,
+            }));
+          }
+          hasToolCalls = true;
+          continue;
         }
-        continue;
+
+        // 工具轮之后没有更多工具调用，进入流式输出
+        hasToolCalls = false;
       }
 
-      // 没有工具调用，返回最终回复
-      const finalContent = typeof response.content === "string"
-        ? response.content
-        : JSON.stringify(response.content);
+      // 流式输出最终回复
+      const stream = await llmWithTools.stream(messages);
+      let finalContent = "";
+      let response: AIMessage | null = null;
 
-      this.saveMessage(session_id, "assistant", finalContent);
+      for await (const chunk of stream) {
+        if (chunk.tool_calls && chunk.tool_calls.length > 0) {
+          // 意外出现工具调用，回退到 invoke 处理
+          if (!response) {
+            response = chunk as AIMessage;
+          }
+          messages.push(response);
+          for (const toolCall of chunk.tool_calls) {
+            const tool = allToolDefs.find(t => t.name === toolCall.name);
+            let result: string;
+            if (tool) {
+              try {
+                result = await tool.handler(toolCall.args);
+              } catch (e) {
+                result = `工具执行错误: ${e}`;
+              }
+            } else {
+              result = `未知工具: ${toolCall.name}`;
+            }
+            if (toolCall.name === "load_skill_module" && role) {
+              loadedModules.push(toolCall.args.module_name);
+              systemPrompt = await buildSystemPrompt(role, loadedModules);
+              if (memoryContext) {
+                systemPrompt += `\n\n## 用户信息\n${memoryContext}`;
+              }
+              messages[0] = new SystemMessage({ content: systemPrompt });
+            }
+            messages.push(new ToolMessage({
+              content: result,
+              tool_call_id: toolCall.id!,
+            }));
+          }
+          hasToolCalls = true;
+          break;
+        }
 
-      yield { type: "done", content: finalContent };
-      return;
+        const token = typeof chunk.content === "string" ? chunk.content : "";
+        if (token) {
+          finalContent += token;
+          yield { type: "token", content: token };
+        }
+        response = chunk as AIMessage;
+      }
+
+      if (!hasToolCalls) {
+        if (response) messages.push(response);
+        this.saveMessage(session_id, "assistant", finalContent);
+        yield { type: "done", content: finalContent };
+        return;
+      }
     }
 
     yield { type: "error", content: "超过最大对话轮次" };

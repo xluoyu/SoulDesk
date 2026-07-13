@@ -7,6 +7,8 @@ pub struct RoleInfo {
     pub id: String,
     pub name: String,
     pub description: String,
+    pub theme_color: String,
+    pub avatar: String,
 }
 
 #[derive(Deserialize)]
@@ -45,7 +47,7 @@ fn roles_dir() -> PathBuf {
     souldesk_dir().join("roles")
 }
 
-fn parse_frontmatter(content: &str) -> Option<(String, String)> {
+fn parse_frontmatter(content: &str) -> Option<(String, String, String, String)> {
     let trimmed = content.trim_start();
     if !trimmed.starts_with("---") {
         return None;
@@ -57,6 +59,8 @@ fn parse_frontmatter(content: &str) -> Option<(String, String)> {
 
     let mut name = String::new();
     let mut description = String::new();
+    let mut theme_color = String::from("#e94560");
+    let mut avatar = String::new();
 
     for line in fm_block.lines() {
         let line = line.trim();
@@ -71,12 +75,14 @@ fn parse_frontmatter(content: &str) -> Option<(String, String)> {
             match key {
                 "name" => name = val.to_string(),
                 "description" => description = val.to_string(),
+                "theme_color" => theme_color = val.to_string(),
+                "avatar" => avatar = val.to_string(),
                 _ => {}
             }
         }
     }
 
-    Some((name, description))
+    Some((name, description, theme_color, avatar))
 }
 
 #[tauri::command]
@@ -104,12 +110,14 @@ pub fn list_roles() -> Result<Vec<RoleInfo>, String> {
         let content = fs::read_to_string(&skill_path).map_err(|e| e.to_string())?;
 
         match parse_frontmatter(&content) {
-            Some((name, description)) => {
+            Some((name, description, theme_color, avatar)) => {
                 let display_name = if name.is_empty() { role_id.clone() } else { name };
                 roles.push(RoleInfo {
                     id: role_id,
                     name: display_name,
                     description,
+                    theme_color,
+                    avatar,
                 });
             }
             None => {
@@ -118,6 +126,8 @@ pub fn list_roles() -> Result<Vec<RoleInfo>, String> {
                     id: role_id,
                     name: id,
                     description: String::new(),
+                    theme_color: String::from("#e94560"),
+                    avatar: String::new(),
                 });
             }
         }
@@ -146,6 +156,8 @@ pub fn create_role(request: CreateRoleRequest) -> Result<RoleInfo, String> {
         id: request.role_id,
         name: request.name,
         description: request.description,
+        theme_color: String::from("#e94560"),
+        avatar: String::new(),
     })
 }
 

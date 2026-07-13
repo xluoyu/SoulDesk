@@ -16,13 +16,15 @@ export interface Role {
   version: string;
   author: string;
   description: string;
+  themeColor: string;
+  avatar: string;
   isManager: boolean;
   systemPrompt: string;
   modules: SkillModule[];
   moduleIndex: string;
 }
 
-export async function listRoles(): Promise<{ id: string; name: string; description: string }[]> {
+export async function listRoles(): Promise<{ id: string; name: string; description: string; themeColor: string; avatar: string }[]> {
   await fs.mkdir(ROLES_DIR, { recursive: true });
   const entries = await fs.readdir(ROLES_DIR, { withFileTypes: true });
   const roles = [];
@@ -37,6 +39,8 @@ export async function listRoles(): Promise<{ id: string; name: string; descripti
           id: entry.name,
           name: data.name || entry.name,
           description: data.description || "",
+          themeColor: data.theme_color || "#e94560",
+          avatar: data.avatar || "",
         });
       } catch {
         // 跳过没有 SKILL.md 的目录
@@ -77,6 +81,8 @@ export async function loadRole(roleId: string): Promise<Role> {
     version: data.version || "1.0",
     author: data.author || "",
     description: data.description || "",
+    themeColor: data.theme_color || "#e94560",
+    avatar: data.avatar || "",
     isManager: data.role === "manager",
     systemPrompt: body,
     modules,

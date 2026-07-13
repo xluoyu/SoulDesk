@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 
-const AGENT_URL = "http://localhost:3456";
+export const AGENT_URL = "http://localhost:3456";
 
 export interface ChatEvent {
   type: "token" | "done" | "error";
@@ -11,6 +11,8 @@ export interface RoleInfo {
   id: string;
   name: string;
   description: string;
+  theme_color: string;
+  avatar: string;
 }
 
 export interface Session {

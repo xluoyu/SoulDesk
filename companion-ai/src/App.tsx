@@ -6,11 +6,13 @@ import SettingsView from './components/Settings/SettingsView';
 import FloatingWidget from './components/Floating/FloatingWidget';
 import { showChatWindow } from './services/tauriBridge';
 import { initTheme } from './services/theme';
+import { useChatStore } from './stores/chatStore';
 import './styles/global.css';
 
 function App() {
   const [windowLabel, setWindowLabel] = useState<string>('');
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark');
+  const roleThemeColor = useChatStore((s) => s.roleThemeColor);
 
   useEffect(() => {
     const win = getCurrentWindow();
@@ -23,7 +25,7 @@ function App() {
   const antdThemeConfig = {
     algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
-      colorPrimary: '#e94560',
+      colorPrimary: roleThemeColor || '#e94560',
       borderRadius: 6,
       ...(isDark
         ? {

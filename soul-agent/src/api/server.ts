@@ -35,7 +35,8 @@ function initEngine() {
   agentEngine = new AgentEngine(
     settings.model.api_key,
     settings.model.base_url,
-    settings.model.model_name
+    settings.model.model_name,
+    settings.model.access_mode || "openai"
   );
   // 同步搜索配置到环境变量
   if (settings.search?.tavily_api_key) {
@@ -52,6 +53,33 @@ app.get("/roles", async () => listRoles());
 app.get("/roles/:id", async (request) => {
   const { id } = request.params as { id: string };
   return await loadRole(id);
+});
+
+app.get("/roles/:id/avatar", async (request, reply) => {
+  const { id } = request.params as { id: string };
+  const roleDir = path.resolve(__dirname, "../../../.souldesk/roles", id);
+  const skillPath = path.join(roleDir, "SKILL.md");
+  try {
+    const content = fs.readFileSync(skillPath, "utf-8");
+    const { data } = require("gray-matter")(content);
+    const avatarFile = data.avatar || "avatar.jpg";
+    const avatarPath = path.join(roleDir, avatarFile);
+    if (fs.existsSync(avatarPath)) {
+      const ext = path.extname(avatarFile).toLowerCase();
+      const mimeMap: Record<string, string> = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+      };
+      reply.header("Content-Type", mimeMap[ext] || "image/jpeg");
+      reply.header("Cache-Control", "public, max-age=3600");
+      return reply.send(fs.readFileSync(avatarPath));
+    }
+  } catch {}
+  reply.code(404);
+  return { error: "avatar not found" };
 });
 
 app.post("/chat", async (request, reply) => {

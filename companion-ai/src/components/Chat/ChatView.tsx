@@ -1,18 +1,35 @@
 import React, { useRef, useEffect } from 'react';
-import { Spin } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useChatStore } from '../../stores/chatStore';
 import { openSettingsWindow } from '../../services/tauriBridge';
+import { getRoles, AGENT_URL } from '../../services/agentClient';
+import { applyRoleTheme } from '../../services/theme';
+import type { RoleInfo } from '../../types';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 
 const ChatView: React.FC = () => {
-  const { messages, isLoading, send } = useChatStore();
+  const { messages, isLoading, streamingContent, streamingMsgId, roleId, roleAvatar, roleName, send, setRoleId, setRoleInfo } = useChatStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, streamingContent]);
+
+  useEffect(() => {
+    getRoles().then((roles: RoleInfo[]) => {
+      if (roles.length > 0) {
+        const currentRole = roles.find(r => r.id === roleId) || roles[0];
+        setRoleId(currentRole.id);
+        setRoleInfo(currentRole);
+        applyRoleTheme(currentRole.theme_color || '#e94560');
+      }
+    });
+  }, []);
+
+  const avatarUrl = roleAvatar
+    ? `${AGENT_URL}/roles/${roleId}/avatar`
+    : '/ashin.jpg';
 
   const handleSettings = async () => {
     await openSettingsWindow();
@@ -32,7 +49,7 @@ const ChatView: React.FC = () => {
         }}
       >
         <img
-          src="/ashin.jpg"
+          src={avatarUrl}
           alt="AI"
           style={{
             width: 32,
@@ -43,7 +60,7 @@ const ChatView: React.FC = () => {
         />
         <div style={{ flex: 1 }}>
           <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>
-            Companion AI
+            {roleName}
           </div>
         </div>
         <SettingOutlined
@@ -79,37 +96,20 @@ const ChatView: React.FC = () => {
           </div>
         )}
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+          <MessageBubble key={msg.id} message={msg} avatarUrl={avatarUrl} />
         ))}
-        {isLoading && (
-          <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'flex-start' }}>
-            <img
-              src="/ashin.jpg"
-              alt="AI"
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                flexShrink: 0,
-                objectFit: 'cover',
-              }}
-            />
-            <div
-              style={{
-                background: 'var(--bg-bubble-assistant)',
-                borderRadius: '2px 14px 14px 14px',
-                padding: '10px 14px',
-                color: 'var(--text-secondary)',
-                fontSize: 13,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <Spin size="small" />
-              思考中...
-            </div>
-          </div>
+        {isLoading && streamingMsgId && (
+          <MessageBubble
+            message={{
+              id: streamingMsgId,
+              session_id: '',
+              role: 'assistant',
+              content: streamingContent || '',
+              timestamp: new Date().toISOString(),
+            }}
+            avatarUrl={avatarUrl}
+            isStreaming
+          />
         )}
         <div ref={messagesEndRef} />
       </div>

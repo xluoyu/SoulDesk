@@ -17,6 +17,11 @@ function applyTheme(mode: ThemeMode) {
   return resolved;
 }
 
+export function applyRoleTheme(color: string) {
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--bg-bubble-user', color);
+}
+
 export async function initTheme(): Promise<'dark' | 'light'> {
   try {
     const settings = await getSettings();

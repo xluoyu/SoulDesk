@@ -3,9 +3,11 @@ import type { ChatMessage } from '../../types';
 
 interface Props {
   message: ChatMessage;
+  isStreaming?: boolean;
+  avatarUrl?: string;
 }
 
-const MessageBubble: React.FC<Props> = ({ message }) => {
+const MessageBubble: React.FC<Props> = ({ message, isStreaming, avatarUrl }) => {
   const isUser = message.role === 'user';
   const time = new Date(message.timestamp).toLocaleTimeString('zh-CN', {
     hour: '2-digit',
@@ -24,7 +26,7 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
     >
       {!isUser && (
         <img
-          src="/ashin.jpg"
+          src={avatarUrl || '/ashin.jpg'}
           alt="AI"
           style={{
             width: 34,
@@ -48,19 +50,34 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
           }}
         >
           {message.content}
+          {isStreaming && (
+            <span
+              style={{
+                display: 'inline-block',
+                width: 6,
+                height: 14,
+                background: 'var(--text-primary)',
+                marginLeft: 2,
+                verticalAlign: 'text-bottom',
+                animation: 'blink 1s step-end infinite',
+              }}
+            />
+          )}
         </div>
-        <div
-          style={{
-            color: 'var(--text-muted)',
-            fontSize: 9,
-            marginTop: 4,
-            paddingLeft: isUser ? 0 : 4,
-            paddingRight: isUser ? 4 : 0,
-            textAlign: isUser ? 'right' : 'left',
-          }}
-        >
-          {time}
-        </div>
+        {!isStreaming && (
+          <div
+            style={{
+              color: 'var(--text-muted)',
+              fontSize: 9,
+              marginTop: 4,
+              paddingLeft: isUser ? 0 : 4,
+              paddingRight: isUser ? 4 : 0,
+              textAlign: isUser ? 'right' : 'left',
+            }}
+          >
+            {time}
+          </div>
+        )}
       </div>
     </div>
   );
